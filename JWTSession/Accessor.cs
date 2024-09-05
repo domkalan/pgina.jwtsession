@@ -10,12 +10,12 @@ using Newtonsoft.Json;
 
 namespace pGina.Plugin.JWTSession
 {
-    public class HttpAccessor
+    public class JsonAccessor
     {
         private static Dictionary<string, LoginResponse> resps = new Dictionary<string, LoginResponse>();
         private static ILog m_logger = LogManager.GetLogger("JWTSessionAccessor");
 
-        static HttpAccessor()
+        static JsonAccessor()
         {
         }
 
@@ -24,7 +24,7 @@ namespace pGina.Plugin.JWTSession
             try
             {
                 // Create a request using a URL that can receive a post. 
-                WebRequest request = WebRequest.Create(Settings.resolveSettings());
+                WebRequest request = WebRequest.Create(Settings.getLoginServer());
                 // Set the Method property of the request to POST.
                 request.Method = "POST";
                 request.Timeout = 2000;
@@ -69,9 +69,15 @@ namespace pGina.Plugin.JWTSession
                                 resps.Remove(uname);
                             }
 
-                            LoginResponse loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseFromServer);
+                            if (!Settings.getStandardJsonLogin())
+                            {
+                                return new BooleanResult() { Success = false, Message = "Not yet implemented" };
+                            } else
+                            {
+                                LoginResponse loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseFromServer);
 
-                            resps.Add(uname, loginResponse);
+                                resps.Add(uname, loginResponse);
+                            }
                         }
                     }
                 }
@@ -112,7 +118,7 @@ namespace pGina.Plugin.JWTSession
             try
             {
                 // Create a request using a URL that can receive a post. 
-                WebRequest request = WebRequest.Create(Settings.resolveSettings());
+                WebRequest request = WebRequest.Create(Settings.getLoginServerPwdChange());
                 // Set the Method property of the request to POST.
                 request.Method = "POST";
                 request.Timeout = 2000;
@@ -158,6 +164,92 @@ namespace pGina.Plugin.JWTSession
                             if (changePwdResp.error != null)
                             {
                                 return new BooleanResult() { Success = false, Message = changePwdResp.error };
+                            }
+
+                            return new BooleanResult() { Success = true };
+                        }
+                    }
+                }
+            }
+            catch (WebException webx)
+            {
+                m_logger.ErrorFormat("PWDCHAccessor.WebException: {0}", webx.Message);
+
+                using (HttpWebResponse res = (HttpWebResponse)webx.Response)
+                {
+                    if (res != null)
+                    {
+                        using (StreamReader resReader = new StreamReader(res.GetResponseStream()))
+                        {
+                            string responseBody = resReader.ReadLine();
+                            if (responseBody.Length > 0)
+                            {
+                                return new BooleanResult() { Success = false, Message = responseBody };
+                            }
+                        }
+                    }
+                }
+
+                return new BooleanResult() { Success = false, Message = webx.Message };
+            }
+            catch (Exception e)
+            {
+                // very bad scenario
+                m_logger.ErrorFormat("PWDCHAccessor.Exception: {0}", e.StackTrace);
+                return new BooleanResult() { Success = false, Message = e.Message };
+            }
+
+        }
+
+        public static BooleanResult checkActiveSession(UserSession sessionObj)
+        {
+            try
+            {
+                // Create a request using a URL that can receive a post. 
+                WebRequest request = WebRequest.Create(Settings.getLoginServerSession());
+                // Set the Method property of the request to POST.
+                request.Method = "POST";
+                request.Timeout = 2000;
+
+                // Session check in request
+                SessionCheckInRequest sessionCheckIn = new SessionCheckInRequest();
+                sessionCheckIn.username = sessionObj.username;
+
+                // Create POST data and convert it to a byte array.
+                string postData = JsonConvert.SerializeObject(sessionCheckIn);
+
+                // Convert json to bytes
+                byte[] byteArray = Encoding.UTF8.GetBytes(postData);
+
+                // Set the ContentType property of the WebRequest.
+                request.ContentType = "application/json";
+                // Set the ContentLength property of the WebRequest.
+                request.ContentLength = byteArray.Length;
+
+                using (Stream dataStream = request.GetRequestStream())
+                {
+                    dataStream.Write(byteArray, 0, byteArray.Length);
+                }
+
+                // Get the response.
+                using (WebResponse response = request.GetResponse())
+                {
+                    using (Stream dataStream = response.GetResponseStream())
+                    {
+                        // Open the stream using a StreamReader for easy access.
+                        using (StreamReader reader = new StreamReader(dataStream))
+                        {
+                            // Read the content.
+                            string responseFromServer = reader.ReadToEnd();
+
+                            // Display the content.
+                            m_logger.InfoFormat("SessionCheckInResponse: {0}", responseFromServer);
+
+                            SessionCheckInResponse sessionResp = JsonConvert.DeserializeObject<SessionCheckInResponse>(responseFromServer);
+
+                            if (sessionResp.error != null)
+                            {
+                                return new BooleanResult() { Success = false, Message = sessionResp.error };
                             }
 
                             return new BooleanResult() { Success = true };

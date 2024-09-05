@@ -24,6 +24,13 @@ namespace pGina.Plugin.JWTSession
         public string[] groups;
     }
 
+    [Serializable]
+    public class LoginResponseToken
+    {
+        public string token;
+    }
+
+    [Serializable]
     internal class ChangePasswordRequest
     {
         public string username;
@@ -31,7 +38,20 @@ namespace pGina.Plugin.JWTSession
         public string oldPassword;
     }
 
+    [Serializable]
     internal class ChangePasswordResponse
+    {
+        public string error;
+    }
+
+    [Serializable]
+    internal class SessionCheckInRequest
+    {
+        public string username;
+    }
+
+    [Serializable]
+    public class SessionCheckInResponse
     {
         public string error;
     }

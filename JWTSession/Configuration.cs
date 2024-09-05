@@ -20,7 +20,10 @@ namespace pGina.Plugin.JWTSession
         public void SettingsToUi()
         {
             Loginserver_textBox.Text = Settings.Store.Loginserver;
-            globalSessionTime.Text = Settings.Store.Sessiontime;
+            LoginserverPwd_textBox.Text = Settings.Store.ChangePassword;
+            LoginserverSession_textBox.Text = Settings.Store.Session;
+            StandardJsonLogin_Checkbox.Checked = Settings.Store.StandardJsonLogin;
+            
         }
 
         private void Form_Load(object sender, EventArgs e)
@@ -45,7 +48,7 @@ namespace pGina.Plugin.JWTSession
             int limit = 0;
             try
             {
-                limit = Convert.ToInt32(globalSessionTime.Text);
+                
             }
             catch (FormatException)
             {
@@ -59,8 +62,10 @@ namespace pGina.Plugin.JWTSession
                 return false;
             }
 
-            Settings.Store.GlobalLimit = limit;
             Settings.Store.Loginserver = Loginserver_textBox.Text;
+            Settings.Store.ChangePassword = LoginserverPwd_textBox.Text;
+            Settings.Store.Session = LoginserverSession_textBox.Text;
+            Settings.Store.StandardJsonLogin = StandardJsonLogin_Checkbox.Checked;
 
             return true;
         }
@@ -78,7 +83,17 @@ namespace pGina.Plugin.JWTSession
 
         private void Btn_help(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("http://mutonufoai.github.io/pgina/documentation/plugins/JWTSession.html");
+            System.Diagnostics.Process.Start("http://github.com/domkalan/pgina.jwtsession#README");
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Loginserver_label_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

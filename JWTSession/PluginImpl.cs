@@ -13,8 +13,10 @@ namespace pGina.Plugin.JWTSession
     public class PluginImpl : IPluginConfiguration, IPluginAuthentication, IPluginAuthenticationGateway, IPluginChangePassword, IPluginEventNotifications
     {
         private static ILog m_logger = LogManager.GetLogger("JWTSession");
-        private SessionCache m_cache;
-        private Timer m_timer;
+ 
+        private Timer m_backgroundTask;
+
+        private Dictionary<string, UserSession> m_sessions;
 
         #region Init-plugin
         public static Guid PluginUuid
@@ -57,48 +59,47 @@ namespace pGina.Plugin.JWTSession
 
         public void Starting()
         {
-            m_cache = new SessionCache();
-            StartTimer();
+            m_sessions = new Dictionary<string, UserSession>();
+
+            StartBackgroundTask();
         }
 
         public void Stopping()
         {
-            StopTimer();
-            m_cache = null;
+            m_sessions.Clear();
+
+            StopBackgroundTask();
+            
         }
 
-        private void StartTimer()
+        private void StartBackgroundTask()
         {
-            m_logger.Debug("Starting timer");
-            m_timer = new Timer(new TimerCallback(SessionLimitTimerCallback), null, TimeSpan.FromSeconds(0),
-                TimeSpan.FromSeconds(60));
+            m_logger.Debug("Starting background task timer");
+            m_backgroundTask = new Timer(new TimerCallback(SessionBackgroundTask), null, TimeSpan.FromSeconds(0), TimeSpan.FromSeconds(60));
         }
 
-        private void StopTimer()
+        private void StopBackgroundTask()
         {
-            m_logger.Debug("Stopping timer");
-            m_timer.Dispose();
-            m_timer = null;
+            m_logger.Debug("Stopping background task timer");
+            m_backgroundTask.Dispose();
+            m_backgroundTask = null;
         }
 
-        private void SessionLimitTimerCallback(object state)
+        private void SessionBackgroundTask(object state)
         {
-            int limit = Settings.Store.GlobalLimit;
-
-            if (limit > 0)
+            /*foreach (int sess in sessions)
             {
-                m_logger.Debug("Checking for sessions to logoff");
-                List<int> sessions = m_cache.SessionsLoggedOnLongerThan(TimeSpan.FromMinutes(limit));
-                m_logger.DebugFormat("Found {0} sessions.", sessions.Count);
-                foreach (int sess in sessions)
-                {
-                    m_logger.DebugFormat("Logging off session {0}", sess);
-                    bool result = Abstractions.WindowsApi.pInvokes.LogoffSession(sess);
-                    if (result)
-                        m_logger.Debug("Log off successful.");
-                    else
-                        m_logger.Debug("Log off failed.");
-                }
+                m_logger.DebugFormat("Logging off session {0}", sess);
+                bool result = Abstractions.WindowsApi.pInvokes.LogoffSession(sess);
+                if (result)
+                    m_logger.Debug("Log off successful.");
+                else
+                    m_logger.Debug("Log off failed.");
+            }*/
+
+            foreach(UserSession session in m_sessions.Values)
+            {
+                BooleanResult sessionValid =  JsonAccessor.checkActiveSession(session);
             }
         }
 
@@ -114,7 +115,7 @@ namespace pGina.Plugin.JWTSession
             // this method shall say if our credentials are valid
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
-            return HttpAccessor.getResponse(userInfo.Username, userInfo.Password);
+            return JsonAccessor.getResponse(userInfo.Username, userInfo.Password);
         }
 
         public BooleanResult AuthenticatedUserGateway(SessionProperties properties)
@@ -123,7 +124,7 @@ namespace pGina.Plugin.JWTSession
 
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
-            LoginResponse uinfo = HttpAccessor.getUserInfo(userInfo.Username);
+            LoginResponse uinfo = JsonAccessor.getUserInfo(userInfo.Username);
             if (uinfo != null)
             {
                 m_logger.DebugFormat("AuthenticatedUserGateway: LoginResponse: {0}", uinfo.ToString());
@@ -158,7 +159,7 @@ namespace pGina.Plugin.JWTSession
                 return new BooleanResult { Success = false, Message = "Current password or username is not valid." };
             }
 
-            return HttpAccessor.getPwChangeResponse(userInfo.Username, userInfo.Password, userInfo.oldPassword);
+            return JsonAccessor.getPwChangeResponse(userInfo.Username, userInfo.Password, userInfo.oldPassword);
         }
 
         public void SessionChange(int SessionId, System.ServiceProcess.SessionChangeReason Reason, SessionProperties properties)
@@ -169,25 +170,50 @@ namespace pGina.Plugin.JWTSession
                 switch (Reason)
                 {
                     case System.ServiceProcess.SessionChangeReason.SessionLogon:
-                        LogonEvent(SessionId);
+                        ProcessSessionStart(properties);
+
                         break;
                     case System.ServiceProcess.SessionChangeReason.SessionLogoff:
-                        LogoffEvent(SessionId);
+                        
+                        break;
+                    case System.ServiceProcess.SessionChangeReason.SessionLock:
+
+                        break;
+                    case System.ServiceProcess.SessionChangeReason.SessionUnlock: 
+                        
                         break;
                 }
             }
         }
 
-        private void LogonEvent(int sessId)
+        public void ProcessSessionStart(SessionProperties properties)
         {
-            m_logger.DebugFormat("LogonEvent: {0}", sessId);
-            m_cache.Add(sessId);
+            UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
+
+            UserSession createdSession = new UserSession();
+            createdSession.username = userInfo.Username;
+            createdSession.sessionId = userInfo.SessionID;
+            createdSession.signOnTime = DateTime.Now;
+
+            m_sessions.Add(userInfo.Username, createdSession);
+
+            m_logger.DebugFormat("Session created for {0}", userInfo.Username);
         }
 
-        private void LogoffEvent(int sessId)
+        public void ProcessSessionSignOff(SessionProperties properties)
         {
-            m_logger.DebugFormat("LogoffEvent: {0}", sessId);
-            m_cache.Remove(sessId);
+            UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
+
+            if (m_sessions.ContainsKey(userInfo.Username))
+                m_sessions.Remove(userInfo.Username);
+        }
+
+        public void ProcessUserLock(SessionProperties properties)
+        {
+            UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
+
+            if (m_sessions.ContainsKey(userInfo.Username))
+                m_sessions[userInfo.Username].lockedAt = DateTime.Now;
         }
     }
 }

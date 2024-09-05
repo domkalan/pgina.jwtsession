@@ -15,13 +15,16 @@ namespace pGina.Plugin.JWTSession
         private static dynamic m_settings = new pGinaDynamicSettings(PluginImpl.PluginUuid);
         private static ILog m_logger = LogManager.GetLogger("JWTSessionSettings");
         private static string DEFAULT_URL = "https://pginaloginserver/login";
+        private static bool STANDARD_JSON_LOGIN = false;
 
         static Settings()
         {
             try
             {
                 m_settings.SetDefault("Loginserver", @DEFAULT_URL);
-                m_settings.SetDefault("GlobalLimit", (int)0);
+                m_settings.SetDefault("ChangePassword", DEFAULT_URL);
+                m_settings.SetDefault("Session", DEFAULT_URL);
+                m_settings.SetDefault("StandardJsonLogin", STANDARD_JSON_LOGIN);
             }
             catch (Exception)
             {
@@ -34,9 +37,9 @@ namespace pGina.Plugin.JWTSession
             get { return m_settings; }
         }
 
-        public static string resolveSettings()
+        public static string getLoginServer()
         {
-            string loginServer = _urlByEnvVar();
+            string loginServer = _urlByEnvVar("PGINALOGINSERVER");
             if (loginServer == null)
             {
                 // try to get URL from DNS
@@ -47,7 +50,7 @@ namespace pGina.Plugin.JWTSession
                     {
                         loginServer = entries[0].ToString();    // gets the first item
                         m_logger.DebugFormat("Login server from DNS: {0}", loginServer);
-                        _persist(loginServer);
+                        _persist("Loginserver", loginServer);
                     }
                     else
                     {
@@ -70,15 +73,102 @@ namespace pGina.Plugin.JWTSession
             else
             {
                 m_logger.DebugFormat("Login server from ENVVar: {0}", loginServer);
-                _persist(loginServer);
+                _persist("Loginserver", loginServer);
             }
             return loginServer;
         }
 
-        private static void _persist(string url) {
+        public static string getLoginServerPwdChange()
+        {
+            string loginServer = _urlByEnvVar("PGINALOGINSERVERPWD");
+            if (loginServer == null)
+            {
+                // try to get URL from DNS
+                try
+                {
+                    List<string> entries = _getTxtRecords("pginaloginserverpwd");
+                    if (entries.Count > 0)
+                    {
+                        loginServer = entries[0].ToString();    // gets the first item
+                        m_logger.DebugFormat("Login server from DNS: {0}", loginServer);
+                        _persist("ChangePassword", loginServer);
+                    }
+                    else
+                    {
+                        loginServer = m_settings.ChangePassword;
+                        m_logger.DebugFormat("Login server from GinaSettings: {0}", loginServer);
+                    }
+                }
+                catch (KeyNotFoundException)
+                {
+                    loginServer = DEFAULT_URL;
+                    m_logger.DebugFormat("default Login server url: {0}", loginServer);
+                }
+                catch (Exception dnsex)
+                {
+                    m_logger.ErrorFormat("Response: {0}", dnsex.ToString());
+                    loginServer = m_settings.ChangePassword;
+                    m_logger.DebugFormat("Login server from GinaSettings: {0}", loginServer);
+                }
+            }
+            else
+            {
+                m_logger.DebugFormat("Login server from ENVVar: {0}", loginServer);
+                _persist("ChangePassword", loginServer);
+            }
+            return loginServer;
+        }
+
+        public static string getLoginServerSession()
+        {
+            string loginServer = _urlByEnvVar("PGINALOGINSERVERSESSION");
+            if (loginServer == null)
+            {
+                // try to get URL from DNS
+                try
+                {
+                    List<string> entries = _getTxtRecords("pginaloginserversession");
+                    if (entries.Count > 0)
+                    {
+                        loginServer = entries[0].ToString();    // gets the first item
+                        m_logger.DebugFormat("Login server from DNS: {0}", loginServer);
+                        _persist("Session", loginServer);
+                    }
+                    else
+                    {
+                        loginServer = m_settings.ChangePassword;
+                        m_logger.DebugFormat("Login server from GinaSettings: {0}", loginServer);
+                    }
+                }
+                catch (KeyNotFoundException)
+                {
+                    loginServer = DEFAULT_URL;
+                    m_logger.DebugFormat("default Login server url: {0}", loginServer);
+                }
+                catch (Exception dnsex)
+                {
+                    m_logger.ErrorFormat("Response: {0}", dnsex.ToString());
+                    loginServer = m_settings.Session;
+                    m_logger.DebugFormat("Login server from GinaSettings: {0}", loginServer);
+                }
+            }
+            else
+            {
+                m_logger.DebugFormat("Login server from ENVVar: {0}", loginServer);
+                _persist("Session", loginServer);
+            }
+            return loginServer;
+        }
+
+        public static bool getStandardJsonLogin()
+        {
+            return m_settings.StandardJsonLogin;
+        }
+
+        private static void _persist(string key, string url) {
             try
             {
-                m_settings.SetSetting("Loginserver", url);
+                m_settings.SetSetting(key, url);
             }
             catch (Exception e)
             {
@@ -90,11 +180,11 @@ namespace pGina.Plugin.JWTSession
          * returns PGINALOGINSERVER environment variable content if set, otherwise null.
          * Setting by environment variable allows easy override of login endpoint address.
          */
-        private static string _urlByEnvVar()
+        private static string _urlByEnvVar(string key)
         {
             try
             {
-                return Environment.GetEnvironmentVariable("PGINALOGINSERVER");
+                return Environment.GetEnvironmentVariable(key);
             }
             catch (Exception)
             {
