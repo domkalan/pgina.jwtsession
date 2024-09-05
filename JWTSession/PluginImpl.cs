@@ -123,14 +123,16 @@ namespace pGina.Plugin.JWTSession
 
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
-            UInfo uinfo = HttpAccessor.getUserInfo(userInfo.Username);
+            LoginResponse uinfo = HttpAccessor.getUserInfo(userInfo.Username);
             if (uinfo != null)
             {
-                m_logger.DebugFormat("AuthenticatedUserGateway: Uinfo: {0}", uinfo.ToString());
+                m_logger.DebugFormat("AuthenticatedUserGateway: LoginResponse: {0}", uinfo.ToString());
+
                 foreach (string group in uinfo.groups)
                 {
                     userInfo.AddGroup(new GroupInformation() { Name = group });
                 }
+
                 properties.AddTrackedSingle<UserInformation>(userInfo);
 
                 // and what else ??? :)

@@ -6,12 +6,13 @@ using System.IO;
 using pGina.Shared.Types;
 using log4net;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace pGina.Plugin.JWTSession
 {
     public class HttpAccessor
     {
-        private static Dictionary<string, UInfo> resps = new Dictionary<string, UInfo>();
+        private static Dictionary<string, LoginResponse> resps = new Dictionary<string, LoginResponse>();
         private static ILog m_logger = LogManager.GetLogger("JWTSessionAccessor");
 
         static HttpAccessor()
@@ -27,8 +28,16 @@ namespace pGina.Plugin.JWTSession
                 // Set the Method property of the request to POST.
                 request.Method = "POST";
                 request.Timeout = 2000;
-                // Create POST data and convert it to a byte array.
-                string postData = "{\"username\":\"" + uname + "\",\"password\":\"" + pwd + "\"}";
+
+                LoginRequest loginRequest = new LoginRequest();
+                loginRequest.username = uname;
+                loginRequest.password = pwd;
+                loginRequest.hostname = Environment.GetEnvironmentVariable("COMPUTERNAME");
+
+                // Convert object to json
+                string postData = JsonConvert.SerializeObject(loginRequest);
+
+                // Convert json to byte array
                 byte[] byteArray = Encoding.UTF8.GetBytes(postData);
                 // Set the ContentType property of the WebRequest.
                 request.ContentType = "application/json";
@@ -50,14 +59,19 @@ namespace pGina.Plugin.JWTSession
                         {
                             // Read the content.
                             string responseFromServer = reader.ReadToEnd();
+
                             // Display the content.
                             m_logger.InfoFormat("Response: {0}", responseFromServer);
+
                             // save it for later use
                             if (resps.ContainsKey(uname))
                             {
                                 resps.Remove(uname);
                             }
-                            resps.Add(uname, UInfo.parseResponse(responseFromServer));
+
+                            LoginResponse loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseFromServer);
+
+                            resps.Add(uname, loginResponse);
                         }
                     }
                 }
@@ -102,9 +116,19 @@ namespace pGina.Plugin.JWTSession
                 // Set the Method property of the request to POST.
                 request.Method = "POST";
                 request.Timeout = 2000;
+
+                // Create password change object
+                ChangePasswordRequest changePwd = new ChangePasswordRequest();
+                changePwd.username = uname;
+                changePwd.password = pwd;
+                changePwd.oldPassword = old;
+
                 // Create POST data and convert it to a byte array.
-                string postData = "{\"username\":\"" + uname + "\",\"password\":\"" + pwd + "\",\"old\":\"" + pwd + "\"}";
+                string postData = JsonConvert.SerializeObject(changePwd);
+
+                // Convert json to bytes
                 byte[] byteArray = Encoding.UTF8.GetBytes(postData);
+
                 // Set the ContentType property of the WebRequest.
                 request.ContentType = "application/json";
                 // Set the ContentLength property of the WebRequest.
@@ -125,9 +149,18 @@ namespace pGina.Plugin.JWTSession
                         {
                             // Read the content.
                             string responseFromServer = reader.ReadToEnd();
+
                             // Display the content.
                             m_logger.InfoFormat("PWDCHResponse: {0}", responseFromServer);
-                            return new BooleanResult() { Success = true, Message = responseFromServer };
+
+                            ChangePasswordResponse changePwdResp = JsonConvert.DeserializeObject<ChangePasswordResponse>(responseFromServer);
+
+                            if (changePwdResp.error != null)
+                            {
+                                return new BooleanResult() { Success = false, Message = changePwdResp.error };
+                            }
+
+                            return new BooleanResult() { Success = true };
                         }
                     }
                 }
@@ -162,7 +195,7 @@ namespace pGina.Plugin.JWTSession
 
         }
 
-        public static UInfo getUserInfo(String uname)
+        public static LoginResponse getUserInfo(String uname)
         {
             if (! resps.ContainsKey(uname))
             {

@@ -6,6 +6,10 @@
 *.sdf
 *.opensdf
 
+# Visual Studio
+.vs/
+packages/
+
 # Log files
 *_log.txt
 
