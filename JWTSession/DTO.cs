@@ -38,7 +38,10 @@ namespace pGina.Plugin.JWTSession
             if (tokenParts.Length != 3)
                 throw new Exception("JSONWebToken did not contain valid parts");
 
-            return JsonConvert.DeserializeObject<LoginPayload>(tokenParts[1]);
+            byte[] jwtPayloadBytes = Convert.FromBase64String(tokenParts[1]);
+            string jwtPayload = Encoding.UTF8.GetString(jwtPayloadBytes);
+
+            return JsonConvert.DeserializeObject<LoginPayload>(jwtPayload);
         }
     }
 
