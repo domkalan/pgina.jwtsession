@@ -176,9 +176,11 @@ namespace pGina.Plugin.JWTSession
 
                         break;
                     case System.ServiceProcess.SessionChangeReason.SessionLogoff:
+                        ProcessSessionSignOff(properties);
                         
                         break;
                     case System.ServiceProcess.SessionChangeReason.SessionLock:
+                        ProcessSessionLock(properties);
 
                         break;
                     case System.ServiceProcess.SessionChangeReason.SessionUnlock: 
@@ -210,7 +212,7 @@ namespace pGina.Plugin.JWTSession
                 m_sessions.Remove(userInfo.Username);
         }
 
-        public void ProcessUserLock(SessionProperties properties)
+        public void ProcessSessionLock(SessionProperties properties)
         {
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
