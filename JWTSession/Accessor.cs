@@ -7,12 +7,13 @@ using pGina.Shared.Types;
 using log4net;
 using System.Text;
 using Newtonsoft.Json;
+using System.Xml.Linq;
 
 namespace pGina.Plugin.JWTSession
 {
     public class JsonAccessor
     {
-        private static Dictionary<string, LoginResponse> resps = new Dictionary<string, LoginResponse>();
+        private static Dictionary<string, LoginTokenResponse> resps = new Dictionary<string, LoginTokenResponse>();
         private static ILog m_logger = LogManager.GetLogger("JWTSessionAccessor");
 
         static JsonAccessor()
@@ -69,18 +70,16 @@ namespace pGina.Plugin.JWTSession
                                 resps.Remove(uname);
                             }
 
-                            if (!Settings.getStandardJsonLogin())
-                            {
-                                return new BooleanResult() { Success = false, Message = "Not yet implemented" };
-                            } else
-                            {
-                                LoginResponse loginResponse = JsonConvert.DeserializeObject<LoginResponse>(responseFromServer);
+                            LoginTokenResponse loginTokenResponse = JsonConvert.DeserializeObject<LoginTokenResponse>(responseFromServer);
 
-                                resps.Add(uname, loginResponse);
-                            }
+                            if (loginTokenResponse.error != null)
+                                return new BooleanResult() { Success = false, Message = loginTokenResponse.error };
+
+                            resps.Add(uname, loginTokenResponse);
                         }
                     }
                 }
+
                 return new BooleanResult() { Success = true };
             }
             catch(WebException webx)
@@ -122,6 +121,14 @@ namespace pGina.Plugin.JWTSession
                 // Set the Method property of the request to POST.
                 request.Method = "POST";
                 request.Timeout = 2000;
+
+                // Append token if exists
+                if (!resps.ContainsKey(uname))
+                {
+                    LoginTokenResponse storedToken = resps[uname];
+
+                    request.Headers.Add("authorization", "Bearer " + storedToken.token);
+                }
 
                 // Create password change object
                 ChangePasswordRequest changePwd = new ChangePasswordRequest();
@@ -211,6 +218,14 @@ namespace pGina.Plugin.JWTSession
                 request.Method = "POST";
                 request.Timeout = 2000;
 
+                // Append token if exists
+                if (!resps.ContainsKey(sessionObj.username))
+                {
+                    LoginTokenResponse storedToken = resps[sessionObj.username];
+
+                    request.Headers.Add("authorization", "Bearer " + storedToken.token);
+                }
+
                 // Session check in request
                 SessionCheckInRequest sessionCheckIn = new SessionCheckInRequest();
                 sessionCheckIn.username = sessionObj.username;
@@ -287,7 +302,7 @@ namespace pGina.Plugin.JWTSession
 
         }
 
-        public static LoginResponse getUserInfo(String uname)
+        public static LoginTokenResponse getUserInfo(String uname)
         {
             if (! resps.ContainsKey(uname))
             {

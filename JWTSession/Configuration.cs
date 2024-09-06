@@ -22,7 +22,6 @@ namespace pGina.Plugin.JWTSession
             Loginserver_textBox.Text = Settings.Store.Loginserver;
             LoginserverPwd_textBox.Text = Settings.Store.ChangePassword;
             LoginserverSession_textBox.Text = Settings.Store.Session;
-            StandardJsonLogin_Checkbox.Checked = Settings.Store.StandardJsonLogin;
             
         }
 
@@ -65,7 +64,6 @@ namespace pGina.Plugin.JWTSession
             Settings.Store.Loginserver = Loginserver_textBox.Text;
             Settings.Store.ChangePassword = LoginserverPwd_textBox.Text;
             Settings.Store.Session = LoginserverSession_textBox.Text;
-            Settings.Store.StandardJsonLogin = StandardJsonLogin_Checkbox.Checked;
 
             return true;
         }

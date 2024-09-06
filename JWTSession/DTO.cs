@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,14 +15,31 @@ namespace pGina.Plugin.JWTSession
     }
 
     [Serializable]
-    public class LoginResponse
+    public class LoginPayload
     {
-        public string error;
         public string username;
         public string password;
         public string accountName;
         public string email;
         public string[] groups;
+    }
+
+    [Serializable]
+    public class LoginTokenResponse
+    {
+        public string error;
+        public string token;
+
+        public LoginPayload ExtractToken()
+        {
+            
+            string[] tokenParts = token.Split('.');
+
+            if (tokenParts.Length != 3)
+                throw new Exception("JSONWebToken did not contain valid parts");
+
+            return JsonConvert.DeserializeObject<LoginPayload>(tokenParts[1]);
+        }
     }
 
     [Serializable]

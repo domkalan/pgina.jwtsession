@@ -37,7 +37,6 @@
             this.label1 = new System.Windows.Forms.Label();
             this.LoginserverSession_textBox = new System.Windows.Forms.TextBox();
             this.label2 = new System.Windows.Forms.Label();
-            this.StandardJsonLogin_Checkbox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // Loginserver_label
@@ -122,23 +121,11 @@
             this.label2.TabIndex = 9;
             this.label2.Text = "JWT Session Background Endpoint";
             // 
-            // StandardJsonLogin_Checkbox
-            // 
-            this.StandardJsonLogin_Checkbox.AutoSize = true;
-            this.StandardJsonLogin_Checkbox.Location = new System.Drawing.Point(12, 51);
-            this.StandardJsonLogin_Checkbox.Name = "StandardJsonLogin_Checkbox";
-            this.StandardJsonLogin_Checkbox.Size = new System.Drawing.Size(151, 17);
-            this.StandardJsonLogin_Checkbox.TabIndex = 10;
-            this.StandardJsonLogin_Checkbox.Text = "Use Standard JSON Login";
-            this.StandardJsonLogin_Checkbox.UseVisualStyleBackColor = true;
-            this.StandardJsonLogin_Checkbox.CheckedChanged += new System.EventHandler(this.checkBox1_CheckedChanged);
-            // 
             // Configuration
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(261, 239);
-            this.Controls.Add(this.StandardJsonLogin_Checkbox);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.LoginserverSession_textBox);
             this.Controls.Add(this.label1);
@@ -167,6 +154,5 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.TextBox LoginserverSession_textBox;
         private System.Windows.Forms.Label label2;
-        private System.Windows.Forms.CheckBox StandardJsonLogin_Checkbox;
     }
 }

@@ -124,12 +124,14 @@ namespace pGina.Plugin.JWTSession
 
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
-            LoginResponse uinfo = JsonAccessor.getUserInfo(userInfo.Username);
+            LoginTokenResponse uinfo = JsonAccessor.getUserInfo(userInfo.Username);
+            LoginPayload upayload = uinfo.ExtractToken();
+
             if (uinfo != null)
             {
                 m_logger.DebugFormat("AuthenticatedUserGateway: LoginResponse: {0}", uinfo.ToString());
 
-                foreach (string group in uinfo.groups)
+                foreach (string group in upayload.groups)
                 {
                     userInfo.AddGroup(new GroupInformation() { Name = group });
                 }

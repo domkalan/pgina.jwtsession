@@ -15,7 +15,6 @@ namespace pGina.Plugin.JWTSession
         private static dynamic m_settings = new pGinaDynamicSettings(PluginImpl.PluginUuid);
         private static ILog m_logger = LogManager.GetLogger("JWTSessionSettings");
         private static string DEFAULT_URL = "https://pginaloginserver/login";
-        private static bool STANDARD_JSON_LOGIN = false;
 
         static Settings()
         {
@@ -24,7 +23,6 @@ namespace pGina.Plugin.JWTSession
                 m_settings.SetDefault("Loginserver", @DEFAULT_URL);
                 m_settings.SetDefault("ChangePassword", DEFAULT_URL);
                 m_settings.SetDefault("Session", DEFAULT_URL);
-                m_settings.SetDefault("StandardJsonLogin", STANDARD_JSON_LOGIN);
             }
             catch (Exception)
             {
@@ -158,11 +156,6 @@ namespace pGina.Plugin.JWTSession
                 _persist("Session", loginServer);
             }
             return loginServer;
-        }
-
-        public static bool getStandardJsonLogin()
-        {
-            return m_settings.StandardJsonLogin;
         }
 
         private static void _persist(string key, string url) {
