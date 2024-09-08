@@ -100,6 +100,11 @@ namespace pGina.Plugin.JWTSession
             foreach(UserSession session in m_sessions.Values)
             {
                 BooleanResult sessionValid =  JsonAccessor.checkActiveSession(session);
+
+                if (!sessionValid.Success)
+                {
+                    Abstractions.WindowsApi.pInvokes.LogoffSession(session.sessionId);
+                }
             }
         }
 

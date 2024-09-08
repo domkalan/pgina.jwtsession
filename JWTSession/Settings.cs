@@ -132,7 +132,7 @@ namespace pGina.Plugin.JWTSession
                     }
                     else
                     {
-                        loginServer = m_settings.ChangePassword;
+                        loginServer = m_settings.Session;
                         m_logger.DebugFormat("Login server from GinaSettings: {0}", loginServer);
                     }
                 }

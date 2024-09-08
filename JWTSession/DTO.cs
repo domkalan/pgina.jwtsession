@@ -78,6 +78,10 @@ namespace pGina.Plugin.JWTSession
     internal class SessionCheckInRequest
     {
         public string username;
+        public string hostname;
+
+        public double signOnTime;
+        public double lockedAt;
     }
 
     [Serializable]
