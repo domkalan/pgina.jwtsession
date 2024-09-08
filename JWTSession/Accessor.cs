@@ -7,7 +7,6 @@ using pGina.Shared.Types;
 using log4net;
 using System.Text;
 using Newtonsoft.Json;
-using System.Xml.Linq;
 
 namespace pGina.Plugin.JWTSession
 {
