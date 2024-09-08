@@ -97,13 +97,13 @@ namespace pGina.Plugin.JWTSession
                     m_logger.Debug("Log off failed.");
             }*/
 
-            foreach(UserSession session in m_sessions.Values)
+            foreach(KeyValuePair<string, UserSession> sessionPair in m_sessions)
             {
-                SessionCheckInResponse sessionResponse = JsonAccessor.checkActiveSession(session);
+                SessionCheckInResponse sessionResponse = JsonAccessor.checkActiveSession(sessionPair.Value);
 
                 if (sessionResponse.error != null)
                 {
-                    Abstractions.WindowsApi.pInvokes.SendMessageToUser(session.sessionId, "Server Session Error", sessionResponse.error);
+                    Abstractions.WindowsApi.pInvokes.SendMessageToUser(sessionPair.Value.sessionId, "Server Session Error", sessionResponse.error);
 
                     return;
                 }
@@ -111,20 +111,26 @@ namespace pGina.Plugin.JWTSession
                 switch(sessionResponse.action)
                 {
                     case "logout":
-                        bool result = Abstractions.WindowsApi.pInvokes.LogoffSession(session.sessionId);
+                        bool result = Abstractions.WindowsApi.pInvokes.LogoffSession(sessionPair.Value.sessionId);
 
                         if (result)
+                        {
                             m_logger.Debug("Log off successful.");
-                        else
+
+                            m_sessions.Remove(sessionPair.Key);
+                        } else
+                        {
                             m_logger.Debug("Log off failed.");
+                        }
+                            
 
                         break;
                     case "message":
-                        Abstractions.WindowsApi.pInvokes.SendMessageToUser(session.sessionId, "Server Message", sessionResponse.actionContext);
+                        Abstractions.WindowsApi.pInvokes.SendMessageToUser(sessionPair.Value.sessionId, "Server Message", sessionResponse.actionContext);
 
                         break;
                     case "processOpen":
-                        Abstractions.WindowsApi.pInvokes.StartUserProcessInSession(session.sessionId, sessionResponse.actionContext);
+                        Abstractions.WindowsApi.pInvokes.StartUserProcessInSession(sessionPair.Value.sessionId, sessionResponse.actionContext);
 
                         break;
                 }
