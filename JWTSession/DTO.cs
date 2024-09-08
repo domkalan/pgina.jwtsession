@@ -91,5 +91,7 @@ namespace pGina.Plugin.JWTSession
     public class SessionCheckInResponse
     {
         public string error;
+        public string action;
+        public string actionContext;
     }
 }

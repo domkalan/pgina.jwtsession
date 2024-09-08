@@ -99,11 +99,34 @@ namespace pGina.Plugin.JWTSession
 
             foreach(UserSession session in m_sessions.Values)
             {
-                BooleanResult sessionValid =  JsonAccessor.checkActiveSession(session);
+                SessionCheckInResponse sessionResponse = JsonAccessor.checkActiveSession(session);
 
-                if (!sessionValid.Success)
+                if (sessionResponse.error != null)
                 {
-                    Abstractions.WindowsApi.pInvokes.LogoffSession(session.sessionId);
+                    Abstractions.WindowsApi.pInvokes.SendMessageToUser(session.sessionId, "Server Session Error", sessionResponse.error);
+
+                    return;
+                }
+
+                switch(sessionResponse.action)
+                {
+                    case "logout":
+                        bool result = Abstractions.WindowsApi.pInvokes.LogoffSession(session.sessionId);
+
+                        if (result)
+                            m_logger.Debug("Log off successful.");
+                        else
+                            m_logger.Debug("Log off failed.");
+
+                        break;
+                    case "message":
+                        Abstractions.WindowsApi.pInvokes.SendMessageToUser(session.sessionId, "Server Message", sessionResponse.actionContext);
+
+                        break;
+                    case "processOpen":
+                        Abstractions.WindowsApi.pInvokes.StartUserProcessInSession(session.sessionId, sessionResponse.actionContext);
+
+                        break;
                 }
             }
         }

@@ -207,7 +207,7 @@ namespace pGina.Plugin.JWTSession
 
         }
 
-        public static BooleanResult checkActiveSession(UserSession sessionObj)
+        public static SessionCheckInResponse checkActiveSession(UserSession sessionObj)
         {
             try
             {
@@ -267,12 +267,7 @@ namespace pGina.Plugin.JWTSession
 
                             SessionCheckInResponse sessionResp = JsonConvert.DeserializeObject<SessionCheckInResponse>(responseFromServer);
 
-                            if (sessionResp.error != null)
-                            {
-                                return new BooleanResult() { Success = false, Message = sessionResp.error };
-                            }
-
-                            return new BooleanResult() { Success = true };
+                            return sessionResp;
                         }
                     }
                 }
@@ -290,19 +285,20 @@ namespace pGina.Plugin.JWTSession
                             string responseBody = resReader.ReadLine();
                             if (responseBody.Length > 0)
                             {
-                                return new BooleanResult() { Success = false, Message = responseBody };
+                                return new SessionCheckInResponse() { error = responseBody };
                             }
                         }
                     }
                 }
 
-                return new BooleanResult() { Success = false, Message = webx.Message };
+                return new SessionCheckInResponse() { error = webx.Message };
             }
             catch (Exception e)
             {
                 // very bad scenario
                 m_logger.ErrorFormat("PWDCHAccessor.Exception: {0}", e.StackTrace);
-                return new BooleanResult() { Success = false, Message = e.Message };
+
+                return new SessionCheckInResponse() { error = e.Message };
             }
 
         }
