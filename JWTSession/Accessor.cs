@@ -231,9 +231,9 @@ namespace pGina.Plugin.JWTSession
                 sessionCheckIn.hostname = Environment.GetEnvironmentVariable("COMPUTERNAME");
                 sessionCheckIn.state = sessionObj.sessionState;
 
-                sessionCheckIn.signOnTime = sessionObj.signOnTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                sessionCheckIn.signOffTime = sessionObj.signOffTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-                sessionCheckIn.lockedAt = sessionObj.lockedAt.Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
+                sessionCheckIn.signOnTime = Math.Floor(sessionObj.signOnTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+                sessionCheckIn.signOffTime = Math.Floor(sessionObj.signOffTime.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
+                sessionCheckIn.lockedAt = Math.Floor(sessionObj.lockedAt.Subtract(new DateTime(1970, 1, 1)).TotalSeconds);
 
                 // Create POST data and convert it to a byte array.
                 string postData = JsonConvert.SerializeObject(sessionCheckIn);
