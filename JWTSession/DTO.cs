@@ -36,10 +36,21 @@ namespace pGina.Plugin.JWTSession
             if (tokenParts.Length != 3)
                 throw new Exception("JSONWebToken did not contain valid parts");
 
-            byte[] jwtPayloadBytes = Convert.FromBase64String(tokenParts[1]);
-            string jwtPayload = Encoding.UTF8.GetString(jwtPayloadBytes);
 
-            return JsonConvert.DeserializeObject<LoginPayload>(jwtPayload);
+            // Adapted from https://stackoverflow.com/questions/62111548/could-not-decode-jwt-payload-from-base64
+            string tokenValue = tokenParts[1];
+            tokenValue = tokenValue.Replace('_', '/').Replace('-', '+');
+
+            switch (tokenValue.Length % 4)
+            {
+                case 2: tokenValue += "=="; break;
+                case 3: tokenValue += "="; break;
+            }
+
+            byte[] decodedBase64 = Convert.FromBase64String(tokenValue);
+            string decodedToken = System.Text.Encoding.Default.GetString(decodedBase64);
+
+            return JsonConvert.DeserializeObject<LoginPayload>(decodedToken);
         }
     }
 
