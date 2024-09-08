@@ -8,8 +8,16 @@ namespace pGina.Plugin.JWTSession
         public string username;
 
         public DateTime signOnTime;
+        public DateTime signOffTime;
         public DateTime lockedAt;
 
         public bool managedSession = true;
+
+        /**
+         * 0 - Signed Out
+         * 1 - Signed In
+         * 2 - Locked
+         */
+        public int sessionState;
     }
 }

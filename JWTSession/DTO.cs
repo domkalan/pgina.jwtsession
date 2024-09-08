@@ -80,7 +80,10 @@ namespace pGina.Plugin.JWTSession
         public string username;
         public string hostname;
 
+        public int state;
+
         public double signOnTime;
+        public double signOffTime;
         public double lockedAt;
     }
 

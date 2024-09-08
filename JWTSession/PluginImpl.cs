@@ -203,6 +203,7 @@ namespace pGina.Plugin.JWTSession
             createdSession.username = userInfo.Username;
             createdSession.sessionId = userInfo.SessionID;
             createdSession.signOnTime = DateTime.Now;
+            createdSession.sessionState = 1;
 
             m_sessions.Add(userInfo.Username, createdSession);
 
@@ -214,7 +215,10 @@ namespace pGina.Plugin.JWTSession
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
             if (m_sessions.ContainsKey(userInfo.Username))
-                m_sessions.Remove(userInfo.Username);
+            {
+                m_sessions[userInfo.Username].sessionState = 0;
+                m_sessions[userInfo.Username].signOffTime = DateTime.Now;
+            }
         }
 
         public void ProcessSessionLock(SessionProperties properties)
@@ -222,7 +226,11 @@ namespace pGina.Plugin.JWTSession
             UserInformation userInfo = properties.GetTrackedSingle<UserInformation>();
 
             if (m_sessions.ContainsKey(userInfo.Username))
+            {
+                m_sessions[userInfo.Username].sessionState = 2;
                 m_sessions[userInfo.Username].lockedAt = DateTime.Now;
+            }
+                
         }
     }
 }
